@@ -30,5 +30,8 @@ INSTANCE_NAME = "cloud-computing-word-count-ec2"
 
 
 # Main Process
-create_bucket(s3_client, BUCKET_NAME)
+#create_bucket(s3_client, BUCKET_NAME)
+#queue_url = create_queue(sqs_client, QUEUE_NAME)
+queue_url = 'https://sqs.us-east-1.amazonaws.com/166914594921/cloud-computing-wordcount-queue'
+
 
