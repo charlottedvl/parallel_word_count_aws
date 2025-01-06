@@ -1,2 +1,5 @@
 .env
-Shakespeare.txt
+datalake/
+labsuser.pem
+credentials
+media
