@@ -1,36 +1,41 @@
 import os
-
 import boto3
 from botocore.exceptions import ClientError
 
 
 def start_stop_instance(ec2_client, instance_id, action):
     """
-    :param instance_id: String, id of the instance that is start/stop
-    :param action: String, either ON or OFF, it defines the action performed on the instance
-    :return: The String response of the api call
+    Start or stop EC2 instance thanks to instance id
+
+    Parameters
+    :param ec2_client: Boto3 EC2 client
+    :param instance_id: string, id of the instance that is start/stop
+    :param action: string, either ON or OFF, it defines the action performed on the instance
+
+    Return
+    :return: The string response of the api call
     """
     if action == 'ON':
-        # Do a dryrun first to verify permissions
+        # Verify permissions
         try:
             ec2_client.start_instances(InstanceIds=[instance_id], DryRun=True)
         except ClientError as e:
             if 'DryRunOperation' not in str(e):
                 raise
-                # Dry run succeeded, run start_instances without dryrun
         try:
+            # Launch instance
             response = ec2_client.start_instances(InstanceIds=[instance_id], DryRun=False)
             print(response)
         except ClientError as e:
             print(e)
     else:
-        # Do a dryrun first to verify permissions
+        # Verify permissions
         try:
             ec2_client.stop_instances(InstanceIds=[instance_id], DryRun=True)
         except ClientError as e:
             if 'DryRunOperation' not in str(e):
                 raise
-        # Dry run succeeded, call stop_instances without dryrun
+        # Stop instance
         try:
             response = ec2_client.stop_instances(InstanceIds=[instance_id], DryRun=False)
             print(response)
@@ -39,6 +44,16 @@ def start_stop_instance(ec2_client, instance_id, action):
 
 
 def create_ec2_instances(ec2_client, count):
+    """
+    Create EC2 instances
+
+    Parameters
+    :param ec2_client: Boto3 EC2 client
+    :param count: int, Number of instances to be launched
+
+    Return
+    :return: The string response of the api call
+    """
     try:
         ami_id = "ami-01816d07b1128cd2d"  # Amazon Linux
         instance_type = "t2.micro"
@@ -51,6 +66,7 @@ def create_ec2_instances(ec2_client, count):
             MaxCount=count,
             SecurityGroupIds=[os.environ.get("SECURITY_GROUP_ID")],
         )
+        # Retrieve instances ids
         instance_ids = [instance['InstanceId'] for instance in instances['Instances']]
         print(f"EC2 Instances launched: {instance_ids}")
         return instance_ids
@@ -74,7 +90,7 @@ def get_running_instance_ips(region_name='us-east-1'):
             Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
         )
 
-        # Extract public IPs
+        # Extract public IPs from response
         ips = []
         for reservation in response['Reservations']:
             for instance in reservation['Instances']:

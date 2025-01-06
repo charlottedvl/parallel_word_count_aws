@@ -8,9 +8,17 @@ load_dotenv()
 
 
 def connect_with_ssh(instance_ip):
+    """
+    Connect to the instance through a ssh connexion
+
+    Parameters
+    :param instance_ip: Instance IP
+    """
+    # Retrieve private key
     private_key = os.environ.get('PRIVATE_KEY')
 
     try:
+        # Connect the instance
         print(f"Connecting to EC2 instance at {instance_ip} and running the script...")
 
         ssh_command = [
@@ -31,6 +39,12 @@ def connect_with_ssh(instance_ip):
 
 
 def run_parallel_connections(instance_ips):
+    """
+    Run instances in parallel trhough ssh connexion
+
+    Parameters
+    :param instance_ips: list of instances IP to run
+    """
     threads = []
 
     # Create a thread for each SSH connection
