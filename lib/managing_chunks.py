@@ -1,0 +1,65 @@
+import json
+
+from lib.aws_resources.s3_manager import delete_from_prefix
+
+
+def split_file_to_chunks(sqs_client, s3_client, bucket_name, queue_url, object_key, chunk_size):
+    try:
+        file_obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+        file_content = file_obj['Body'].read().decode('utf-8')
+        lines = file_content.split('\n')
+        chunks = [lines[i:i + chunk_size] for i in range(0, len(lines), chunk_size)]
+
+        print(f"Splitting {object_key} into {len(chunks)} chunks")
+
+        # Suppressing previous chunks and chunks results so that it doesn't interfere with the new ones
+        chunk_prefix = f"datalake/results/" + object_key.split('/')[-1].replace('.txt', '')
+        delete_from_prefix(s3_client, bucket_name, chunk_prefix)
+        chunk_prefix = f"datalake/chunks/{chunk_size}/" + object_key.split('/')[-1].replace('.txt', '')
+        delete_from_prefix(s3_client, bucket_name, chunk_prefix)
+
+        for idx, chunk in enumerate(chunks):
+            chunk_key = f"{chunk_prefix}_chunk_{idx}.txt"
+            s3_client.put_object(Bucket=bucket_name, Key=chunk_key, Body='\n'.join(chunk))
+
+            # Send message to SQS
+            message = {
+                'bucket_name': bucket_name,
+                'chunk_key': chunk_key
+            }
+            sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message))
+
+        print(f"File {object_key} split into chunks and messages sent to SQS")
+
+    except Exception as e:
+        print(f"Error splitting file into chunks: {e}")
+
+
+def aggregate_results(s3_client, bucket_name, result_directory, chunk_size, instances_count):
+    try:
+        total_word_count = 0
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=result_directory)
+
+        if 'Contents' in response:
+            for obj in response['Contents']:
+                # Get the object content
+                file_data = s3_client.get_object(Bucket=bucket_name, Key=obj['Key'])
+
+                # Read the content as JSON
+                content = file_data['Body'].read().decode('utf-8')
+
+                # Parse the JSON data
+                result_data = json.loads(content)
+
+                # Extract the word_count from the JSON object and add it to the total
+                word_count = result_data.get("word_count", 0)
+
+                total_word_count += word_count
+
+        # Save final result to S3
+        final_result_key = f"datalake/final_results/{instances_count}-instances-{chunk_size}-size.txt"
+        s3_client.put_object(Bucket=bucket_name, Key=final_result_key, Body=str(total_word_count))
+        print(f"Final Word Count: {total_word_count} saved to {final_result_key}")
+        return total_word_count
+    except Exception as e:
+        print(f"Error aggregating results: {e}")
