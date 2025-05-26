@@ -2,13 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 def create_plots():
-    # Read the CSV file with the data
     data = pd.read_csv("../media/execution_and_error_data.csv", names=["EC2 Count", "Chunk Size", "Execution Time", "Error Rate"])
 
     # Plot Execution Time vs EC2 count and Chunk Size
     plt.figure(figsize=(12, 8))
-
-    # Use pivot to structure data for plotting Execution Time vs EC2 Count and Chunk Size
     pivot_exec = data.pivot_table(values='Execution Time', index='EC2 Count', columns='Chunk Size')
 
     # Create a heatmap of execution time
@@ -20,7 +17,6 @@ def create_plots():
     plt.xticks(ticks=range(len(pivot_exec.columns)), labels=pivot_exec.columns)
     plt.yticks(ticks=range(len(pivot_exec.index)), labels=pivot_exec.index)
 
-    # Save this plot
     plt.tight_layout()
     plt.savefig('../media/execution_time_vs_ec2_and_chunk_size.png')
     plt.close()
@@ -38,7 +34,6 @@ def create_plots():
     plt.xticks(ticks=range(len(pivot_error.columns)), labels=pivot_error.columns)
     plt.yticks(ticks=range(len(pivot_error.index)), labels=pivot_error.index)
 
-    # Save this plot
     plt.tight_layout()
     plt.savefig('../media/error_rate_vs_ec2_and_chunk_size.png')
     plt.close()
@@ -55,7 +50,6 @@ def create_plots():
     plt.ylabel('Execution Time (seconds)')
     plt.legend()
 
-    # Save this plot
     plt.tight_layout()
     plt.savefig('../media/execution_time_vs_chunk_size.png')
     plt.close()
@@ -72,7 +66,6 @@ def create_plots():
     plt.ylabel('Execution Time (seconds)')
     plt.legend()
 
-    # Save this plot
     plt.tight_layout()
     plt.savefig('../media/execution_time_vs_ec2_count.png')
     plt.close()
